@@ -1,0 +1,106 @@
+import java.sql.*;
+import java.util.Scanner;
+
+public class StudentManagement {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        try (Connection con = DBConnection.getConnection()) {
+            if (con == null) {
+                System.out.println("Database connection failed. Exiting...");
+                return;
+            }
+
+            System.out.println("Connected to database successfully!");
+            
+            while (true) {
+                System.out.println("\n===== STUDENT MANAGEMENT SYSTEM =====");
+                System.out.println("1. Add Student");
+                System.out.println("2. View Students");
+                System.out.println("3. Update Student");
+                System.out.println("4. Delete Student");
+                System.out.println("5. Exit");
+                System.out.print("Enter your choice: ");
+                int choice = sc.nextInt();
+
+                switch (choice) {
+                    case 1 -> addStudent(con, sc);
+                    case 2 -> viewStudents(con);
+                    case 3 -> updateStudent(con, sc);
+                    case 4 -> deleteStudent(con, sc);
+                    case 5 -> { 
+                        System.out.println("Exiting program..."); 
+                        return; 
+                    }
+                    default -> System.out.println("Invalid choice!");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void addStudent(Connection con, Scanner sc) throws SQLException {
+        System.out.print("Enter Name: ");
+        String name = sc.next();
+        System.out.print("Enter Age: ");
+        int age = sc.nextInt();
+        System.out.print("Enter Grade: ");
+        String grade = sc.next();
+
+        String query = "INSERT INTO students (name, age, grade) VALUES (?, ?, ?)";
+        PreparedStatement pst = con.prepareStatement(query);
+        pst.setString(1, name);
+        pst.setInt(2, age);
+        pst.setString(3, grade);
+        pst.executeUpdate();
+
+        System.out.println("✅ Student added successfully!");
+    }
+
+    private static void viewStudents(Connection con) throws SQLException {
+        String query = "SELECT * FROM students";
+        Statement st = con.createStatement();
+        ResultSet rs = st.executeQuery(query);
+
+        System.out.println("\nID | Name | Age | Grade");
+        System.out.println("--------------------------");
+        while (rs.next()) {
+            System.out.printf("%d | %s | %d | %s%n",
+                    rs.getInt("id"), rs.getString("name"), rs.getInt("age"), rs.getString("grade"));
+        }
+    }
+
+    private static void updateStudent(Connection con, Scanner sc) throws SQLException {
+        System.out.print("Enter Student ID to update: ");
+        int id = sc.nextInt();
+        System.out.print("Enter new Grade: ");
+        String grade = sc.next();
+
+        String query = "UPDATE students SET grade=? WHERE id=?";
+        PreparedStatement pst = con.prepareStatement(query);
+        pst.setString(1, grade);
+        pst.setInt(2, id);
+        int rows = pst.executeUpdate();
+
+        if (rows > 0)
+            System.out.println("✅ Student updated successfully!");
+        else
+            System.out.println("❌ Student ID not found!");
+    }
+
+    private static void deleteStudent(Connection con, Scanner sc) throws SQLException {
+        System.out.print("Enter Student ID to delete: ");
+        int id = sc.nextInt();
+
+        String query = "DELETE FROM students WHERE id=?";
+        PreparedStatement pst = con.prepareStatement(query);
+        pst.setInt(1, id);
+        int rows = pst.executeUpdate();
+
+        if (rows > 0)
+            System.out.println("✅ Student deleted successfully!");
+        else
+            System.out.println("❌ Student ID not found!");
+    }
+}
